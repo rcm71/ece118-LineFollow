@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "msp.h"
-#include "../inc/bump.h"
+//#include "../inc/bump.h"
 #include "../inc/BumpInt.h"
 #include "../inc/Clock.h"
 #include "../inc/CortexM.h"
