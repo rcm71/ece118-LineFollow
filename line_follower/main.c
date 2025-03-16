@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include "msp.h"
-//#include "../inc/bump.h"
 #include "../inc/BumpInt.h"
 #include "../inc/Clock.h"
 #include "../inc/CortexM.h"
@@ -98,6 +97,55 @@ void ConfigureUnusedPins(void) {
     P10->DIR = 0xFF; P10->OUT = 0x00;
 }
 
+
+
+// fsm state for robot (rory)
+struct state{
+    uint8_t left;
+    uint8_t right;
+    const struct state*next[8];
+};
+typedef const struct state state_t;
+
+#define straight &fsm[0]
+#define slight_left &fsm[1]
+#define slight_right &fsm[2]
+#define harder_left &fsm[3]
+#define harder_right &fsm[4]
+#define all_left &fsm[5]
+#define all_right &fsm[6]
+
+// fsm for our robot (rory)
+state_t fsm[7]={
+    {24,24,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// straight
+    {16,24,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_right }},// slight_left
+    {24,16,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_left }},// slight_right
+    {7,21,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// harder_left
+    {21,7,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// harder_right
+    {0 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// all_left
+    {20, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_left }} // all_right
+};
+
+// Using SysTick to read reflectance (rory)
+uint8_t sensor_value;
+uint8_t flag;
+uint8_t bump_value;
+uint8_t interrupt_count;
+volatile uint8_t semaphore;
+uint32_t reflectance_value;
+
+void SysTick_Handler(void){
+    if(interrupt_count == 0){
+        Reflectance_Start();
+    }else if(interrupt_count == 1){
+        flag = 1; // 'semaphore'
+        sensor_value = Reflectance_End();
+        reflectance_value = Reflectance_Position(sensor_value);
+    }
+    interrupt_count = (interrupt_count + 1) % 10;
+}
+
+state_t* state;
 // (andreea) Function to define task called when bump sensor is triggered
 void BumpTask(uint8_t bump) { // bump is a 6 bit number
     // stop motors immediately
@@ -128,56 +176,9 @@ void BumpTask(uint8_t bump) { // bump is a 6 bit number
         PWM_SetDutyPercentage(10, 20);  // Turn left
         Clock_Delay1ms(2000);
     }
+    Motor_Forward_2();
+    state = straight;
 }
-
-
-// fsm state for robot (rory)
-struct state{
-    uint8_t left;
-    uint8_t right;
-    const struct state*next[8];
-};
-typedef const struct state state_t;
-
-#define straight &fsm[0]
-#define slight_left &fsm[1]
-#define slight_right &fsm[2]
-#define harder_left &fsm[3]
-#define harder_right &fsm[4]
-#define all_left &fsm[5]
-#define all_right &fsm[6]
-
-// fsm for our robot (rory)
-state_t fsm[7]={
-    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// straight
-    {10,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_right }},// slight_left
-    {15,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_left }},// slight_right
-    {5,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// harder_left
-    {15,5,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// harder_right
-    {0 ,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// all_left
-    {15, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_left }} // all_right
-};
-
-// Using SysTick to read reflectance (rory)
-uint8_t sensor_value;
-uint8_t flag;
-uint8_t bump_value;
-uint8_t interrupt_count;
-volatile uint8_t semaphore;
-uint32_t reflectance_value;
-
-void SysTick_Handler(void){
-    if(interrupt_count == 0){
-        Reflectance_Start();
-    }else if(interrupt_count == 1){
-        flag = 1; // 'semaphore'
-        sensor_value = Reflectance_End();
-        reflectance_value = Reflectance_Position(sensor_value);
-    }
-    interrupt_count = (interrupt_count + 1) % 10;
-}
-
-
 int main(void) {
     //Clock_Init12MHz();  // Use 12 MHz instead of 48 MHz for power savings
     Clock_Init48MHz(); 
@@ -185,37 +186,34 @@ int main(void) {
     Motor_Control_Init();  // Initialize motor control GPIO
     Motor_Forward_2();     // Start moving forward
     BumpInt_Init(BumpTask); // (andreea) initialization for bump and edge interrupt
-    SysTick_Init(48000, 0);// may need to change priority
-    Reflectance_Init();
+    SysTick_Init(48000, 2);// may need to change priority
+
 
     uint16_t period = 15000;  // Define PWM period (~3.2 kHz for 48 MHz clock)
     PWM_Init(period);         // Initialize PWM
 
 
-    state_t* state = straight;
+    state = straight;
     reflectance_value = 0;
-
-    uint8_t ref_val = reflectance_value;
-    uint8_t data = sensor_value;
     sensor_value = 0x01; // want sooome values but don't want the bad case
     while (1) {
         PWM_SetDutyPercentage(state->left, state->right);
-        ref_val = reflectance_value;
-        data = sensor_value;
         if(reflectance_value == 0 && sensor_value == 0){
-            state = state->next[6]; // bad!!
+            state = state->next[7]; // bad!!
         }else if(reflectance_value < -30000){
             state = state->next[0]; //way off on left
-        }else if(-30000 < reflectance_value && reflectance_value < -20000){
+        }else if(-30000 < reflectance_value && reflectance_value < -25000){
             state = state->next[1];
-        }else if(-20000 < reflectance_value && reflectance_value < -10000){
+        }else if(-25000 < reflectance_value && reflectance_value < -15000){
             state = state->next[2];
-        }else if(-10000 < reflectance_value && reflectance_value < 10000){
+        }else if(-15000 < reflectance_value && reflectance_value < 15000){
             state = state->next[3];
-        }else if(20000 < reflectance_value && reflectance_value < 30000){
+        }else if(15000 < reflectance_value && reflectance_value < 25000){
             state = state->next[4];
-        }else if(reflectance_value > 300000){
+        }else if(25000 < reflectance_value && reflectance_value < 30000){
             state = state->next[5];
+        }else if(reflectance_value > 300000){
+            state = state->next[6];
         }
     }
 }

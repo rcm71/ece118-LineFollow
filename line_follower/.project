@@ -31,11 +31,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/inc/Clock.c</locationURI>
 		</link>
 		<link>
-			<name>Reflectance.c</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/inc/Reflectance.c</locationURI>
-		</link>
-		<link>
 			<name>SysTickInts.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/inc/SysTickInts.c</locationURI>

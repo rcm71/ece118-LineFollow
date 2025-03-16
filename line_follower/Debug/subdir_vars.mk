@@ -8,11 +8,11 @@ CMD_SRCS += \
 
 C_SRCS += \
 ../BumpInt.c \
-/Users/andreeatoader/School/ECE\ 1188/LineFollowingRace/ece118-LineFollow/inc/Clock.c \
-/Users/andreeatoader/School/ECE\ 1188/LineFollowingRace/ece118-LineFollow/inc/Reflectance.c \
-/Users/andreeatoader/School/ECE\ 1188/LineFollowingRace/ece118-LineFollow/inc/SysTickInts.c \
-/Users/andreeatoader/School/ECE\ 1188/LineFollowingRace/ece118-LineFollow/inc/TExaS.c \
-/Users/andreeatoader/School/ECE\ 1188/LineFollowingRace/ece118-LineFollow/inc/TimerA1.c \
+/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/Clock.c \
+../Reflectance.c \
+/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/SysTickInts.c \
+/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TExaS.c \
+/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TimerA1.c \
 ../main.c \
 ../startup_msp432p401r_ccs.c \
 ../system_msp432p401r.c 
@@ -63,11 +63,11 @@ C_DEPS__QUOTED += \
 
 C_SRCS__QUOTED += \
 "../BumpInt.c" \
-"/Users/andreeatoader/School/ECE 1188/LineFollowingRace/ece118-LineFollow/inc/Clock.c" \
-"/Users/andreeatoader/School/ECE 1188/LineFollowingRace/ece118-LineFollow/inc/Reflectance.c" \
-"/Users/andreeatoader/School/ECE 1188/LineFollowingRace/ece118-LineFollow/inc/SysTickInts.c" \
-"/Users/andreeatoader/School/ECE 1188/LineFollowingRace/ece118-LineFollow/inc/TExaS.c" \
-"/Users/andreeatoader/School/ECE 1188/LineFollowingRace/ece118-LineFollow/inc/TimerA1.c" \
+"/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/Clock.c" \
+"../Reflectance.c" \
+"/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/SysTickInts.c" \
+"/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TExaS.c" \
+"/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TimerA1.c" \
 "../main.c" \
 "../startup_msp432p401r_ccs.c" \
 "../system_msp432p401r.c" 

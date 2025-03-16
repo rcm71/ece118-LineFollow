@@ -188,6 +188,7 @@ int main(void) {
     Motor_Forward_2();     // Start moving forward
     BumpInt_Init(BumpTask); // (andreea) initialization for bump and edge interrupt
     SysTick_Init(48000, 2);// may need to change priority
+    Reflectance_Init();
 
 
     uint16_t period = 15000;  // Define PWM period (~3.2 kHz for 48 MHz clock)
@@ -200,7 +201,7 @@ int main(void) {
     while (1) {
         PWM_SetDutyPercentage(state->left, state->right);
         if(reflectance_value == 0 && sensor_value == 0){
-            state = state->next[6]; // bad!!
+            state = state->next[7]; // bad!!
         }else if(reflectance_value < -30000){
             state = state->next[0]; //way off on left
         }else if(-30000 < reflectance_value && reflectance_value < -20000){
@@ -210,9 +211,9 @@ int main(void) {
         }else if(-10000 < reflectance_value && reflectance_value < 10000){
             state = state->next[3];
         }else if(20000 < reflectance_value && reflectance_value < 30000){
-            state = state->next[4];
-        }else if(reflectance_value > 300000){
             state = state->next[5];
+        }else if(reflectance_value > 300000){
+            state = state->next[6];
         }
     }
 }
