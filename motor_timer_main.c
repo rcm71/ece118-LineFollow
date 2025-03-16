@@ -128,7 +128,8 @@ void BumpTask(uint8_t bump) { // bump is a 6 bit number
 }
 
 int main(void) {
-    Clock_Init12MHz();  // Use 12 MHz instead of 48 MHz for power savings
+    //Clock_Init12MHz();  // Use 12 MHz instead of 48 MHz for power savings
+    Clock_Init48MHz(); 
     ConfigureUnusedPins();  // Configure all unused pins as outputs and set them low
     Motor_Control_Init();  // Initialize motor control GPIO
     Motor_Forward_2();     // Start moving forward
