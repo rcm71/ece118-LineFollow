@@ -141,13 +141,13 @@ int main(void) {
         PWM_SetDutyPercentage(10, 10);  // Move straight
         Clock_Delay1ms(2000);
 
-//        PWM_SetDutyPercentage(20, 10);  // Turn right
-//        Clock_Delay1ms(2000);
-//
-//        PWM_SetDutyPercentage(10, 20);  // Turn left
-//        Clock_Delay1ms(2000);
-//
-//        PWM_SetDutyPercentage(0, 0);    // Stop motors
-//        Clock_Delay1ms(2000);
+       PWM_SetDutyPercentage(20, 10);  // Turn right
+       Clock_Delay1ms(2000);
+
+       PWM_SetDutyPercentage(10, 20);  // Turn left
+       Clock_Delay1ms(2000);
+
+       PWM_SetDutyPercentage(0, 0);    // Stop motors
+       Clock_Delay1ms(2000);
     }
 }
