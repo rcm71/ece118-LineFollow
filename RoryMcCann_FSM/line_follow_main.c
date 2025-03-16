@@ -5,11 +5,9 @@
 #include "../inc/Clock.h"
 #include "../inc/SysTickInts.h"
 #include "../inc/Reflectance.h"
-#include "../inc/bump.h"
 
 
 
-#define TOTAL_STATES 7
 
 
 
@@ -94,8 +92,6 @@ void main(void)
         }else if(reflectance_value > 300000){
             state = state->next[5];
         }
-        // wait??
-        // what to do with bumps!?
     }
 
 
