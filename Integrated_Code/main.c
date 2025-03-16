@@ -129,6 +129,7 @@ void BumpTask(uint8_t bump) { // bump is a 6 bit number
         PWM_SetDutyPercentage(10, 20);  // Turn left
         Clock_Delay1ms(2000);
     }
+    Motor_Forward_2();
 }
 
 
