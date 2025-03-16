@@ -68,10 +68,6 @@ policies, either expressed or implied, of the FreeBSD Project.
 // Input: none
 // Output: none
 void Reflectance_Init(void){
-    /* Output */
-    P4->DIR |= OSCIL_OUTPUT;
-    P4->SEL0 &= ~OSCIL_OUTPUT;
-    P4->SEL1 &= ~OSCIL_OUTPUT;
 
     /* control pins */
     P9->DIR |= CONTROL_ODD;
