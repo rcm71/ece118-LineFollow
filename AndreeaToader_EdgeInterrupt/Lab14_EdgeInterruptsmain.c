@@ -86,11 +86,8 @@ void BumpTask(uint8_t bump) { // bump is a 6 bit number
     else if (bump & 0x20) { // bump 5 = white
         P2->OUT = (P2->OUT & ~0x07) | 0x07;
     }
-    else if (bump & 0x00) { // no bumps
+    else { // black
         P2->OUT = (P2->OUT & ~0x07) | 0x00;
-    }
-    else { // anything else, pink
-        P2->OUT = (P2->OUT & ~0x07) | 0x05;
     }
 }
 
