@@ -13,10 +13,6 @@
 #include "../inc/Reflectance.h"
 
 
-
-
-
-
 // Function to initialize TimerA for Center-Aligned PWM
 void PWM_Init(uint16_t period) {
     P2->DIR |= BIT6 | BIT7;     // Set P2.6 and P2.7 as outputs (PWM)
@@ -101,8 +97,8 @@ void ConfigureUnusedPins(void) {
 
 // fsm state for robot (rory)
 struct state{
-    uint8_t left;
-    uint8_t right;
+    uint8_t left; // pwm % for left motor
+    uint8_t right;// pwm % for right motor
     const struct state*next[8];
 };
 typedef const struct state state_t;
@@ -117,28 +113,25 @@ typedef const struct state state_t;
 
 // fsm for our robot (rory)
 state_t fsm[7]={
-    {24,24,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// straight
-    {16,24,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_right }},// slight_left
-    {24,16,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_left }},// slight_right
-    {7,21,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// harder_left
-    {21,7,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// harder_right
-    {0 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// all_left
-    {20, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_left }} // all_right
+    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_left }},// straight
+    {20,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// slight_left
+    {10,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// slight_right
+    {20,5 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// harder_left
+    {5 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// harder_right
+    {25 ,0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// all_left
+    {0, 25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }} // all_right
 };
 
 // Using SysTick to read reflectance (rory)
 uint8_t sensor_value;
-uint8_t flag;
 uint8_t bump_value;
 uint8_t interrupt_count;
-volatile uint8_t semaphore;
-uint32_t reflectance_value;
+int32_t reflectance_value;
 
 void SysTick_Handler(void){
     if(interrupt_count == 0){
         Reflectance_Start();
     }else if(interrupt_count == 1){
-        flag = 1; // 'semaphore'
         sensor_value = Reflectance_End();
         reflectance_value = Reflectance_Position(sensor_value);
     }
@@ -186,8 +179,8 @@ int main(void) {
     Motor_Control_Init();  // Initialize motor control GPIO
     Motor_Forward_2();     // Start moving forward
     BumpInt_Init(BumpTask); // (andreea) initialization for bump and edge interrupt
-    SysTick_Init(48000, 2);// may need to change priority
-
+    SysTick_Init(48000, 7);// may need to change priority
+    Reflectance_Init();
 
     uint16_t period = 15000;  // Define PWM period (~3.2 kHz for 48 MHz clock)
     PWM_Init(period);         // Initialize PWM
@@ -196,24 +189,53 @@ int main(void) {
     state = straight;
     reflectance_value = 0;
     sensor_value = 0x01; // want sooome values but don't want the bad case
+    state_t* local_state;
+    uint32_t local_read;
+    int8_t local_sensor;
     while (1) {
-        PWM_SetDutyPercentage(state->left, state->right);
-        if(reflectance_value == 0 && sensor_value == 0){
+        local_state = state;
+        local_read = reflectance_value;
+        local_sensor = sensor_value;
+        if(reflectance_value == 0 && (sensor_value == 0 || sensor_value == 0xFF)){
+
             state = state->next[7]; // bad!!
-        }else if(reflectance_value < -30000){
+            P2->OUT = 0x07; // white
+            PWM_SetDutyPercentage(state->left, state->right);
+            Motor_Backward_2(250);
+            Motor_Forward_2();
+        }else if(reflectance_value < -25000){
+            P2->OUT = 0x01;//red
+            if(state = harder_left){
+                Clock_Delay1ms(200);
+            }
             state = state->next[0]; //way off on left
-        }else if(-30000 < reflectance_value && reflectance_value < -25000){
+
+        }else if(-25000 < reflectance_value && reflectance_value < -20000){
             state = state->next[1];
-        }else if(-25000 < reflectance_value && reflectance_value < -15000){
+            P2->OUT = 0x04; //blue
+        }else if(-20000 < reflectance_value && reflectance_value < -17000){
             state = state->next[2];
-        }else if(-15000 < reflectance_value && reflectance_value < 15000){
+            P2->OUT = 0x02;
+        }else if(-17000 < reflectance_value && reflectance_value < 17000){
             state = state->next[3];
-        }else if(15000 < reflectance_value && reflectance_value < 25000){
+            P2->OUT = 0x03; // yellow
+        }else if(17000 < reflectance_value && reflectance_value < 20000){
             state = state->next[4];
-        }else if(25000 < reflectance_value && reflectance_value < 30000){
+            P2->OUT = 0x06; // sky_blue
+        }else if(20000 < reflectance_value && reflectance_value < 25000){
             state = state->next[5];
-        }else if(reflectance_value > 300000){
+            P2->OUT = 0x05;//pink
+        }else if(reflectance_value > 250000){
+            if(state = harder_right){
+                Clock_Delay1ms(200);
+            }
             state = state->next[6];
+            P2->OUT = 0x01;//red
+        }
+
+        PWM_SetDutyPercentage(state->left, state->right);
+        if(sensor_value == 0x03 || sensor_value == 0x30){
+            Clock_Delay1ms(200);
         }
     }
 }
