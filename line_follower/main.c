@@ -110,16 +110,35 @@ typedef const struct state state_t;
 #define harder_right &fsm[4]
 #define all_left &fsm[5]
 #define all_right &fsm[6]
+#define err_left &fsm[7]
+#define err_right &fsm[8]
+#define err_straight &fsm[9]
 
 // fsm for our robot (rory)
-state_t fsm[7]={
-    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_left }},// straight
-    {20,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// slight_left
-    {10,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// slight_right
-    {20,5 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// harder_left
-    {5 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// harder_right
-    {25 ,0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// all_left
-    {0, 25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }} // all_right
+//state_t fsm[10]={
+//    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// straight
+//    {20,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// slight_left
+//    {10,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// slight_right
+//    {20,5 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// harder_left
+//    {5 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// harder_right
+//    {25 ,0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// all_left
+//    {0, 25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }}, // all_right
+//    {25,0 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }}, // err_left
+//    {0 ,25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// err_right
+//    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left}} // err_straight
+//};
+
+state_t fsm[10]={
+    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// straight
+    {20,10,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_right }},// slight_left
+    {10,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// slight_right
+    {25,5 ,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_left }},// harder_left
+    {5 ,25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// harder_right
+    {25 ,0,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_left }},// all_left
+    {0, 25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }}, // all_right
+    {25,0 ,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_left }}, // err_left
+    {0 ,25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// err_right
+    {15,0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight}} // err_straight
 };
 
 // Using SysTick to read reflectance (rory)
@@ -182,60 +201,54 @@ int main(void) {
     SysTick_Init(48000, 7);// may need to change priority
     Reflectance_Init();
 
-    uint16_t period = 15000;  // Define PWM period (~3.2 kHz for 48 MHz clock)
-    PWM_Init(period);         // Initialize PWM
+    // Define PWM period (~3.2 kHz for 48 MHz clock)
+    PWM_Init(15000);         // Initialize PWM
 
 
     state = straight;
     reflectance_value = 0;
     sensor_value = 0x01; // want sooome values but don't want the bad case
-    state_t* local_state;
-    uint32_t local_read;
-    int8_t local_sensor;
-    while (1) {
-        local_state = state;
-        local_read = reflectance_value;
-        local_sensor = sensor_value;
-        if(reflectance_value == 0 && (sensor_value == 0 || sensor_value == 0xFF)){
 
+    while (1) {
+        if(reflectance_value == 0 && (sensor_value == 0 || sensor_value == 0xFF)){
             state = state->next[7]; // bad!!
             P2->OUT = 0x07; // white
-            PWM_SetDutyPercentage(state->left, state->right);
-            Motor_Backward_2(250);
-            Motor_Forward_2();
-        }else if(reflectance_value < -25000){
+        }else if(reflectance_value < -40000){
             P2->OUT = 0x01;//red
-            if(state = harder_left){
-                Clock_Delay1ms(200);
-            }
             state = state->next[0]; //way off on left
-
-        }else if(-25000 < reflectance_value && reflectance_value < -20000){
+        }else if(-40000 < reflectance_value && reflectance_value < -20000){
             state = state->next[1];
             P2->OUT = 0x04; //blue
         }else if(-20000 < reflectance_value && reflectance_value < -17000){
             state = state->next[2];
-            P2->OUT = 0x02;
+            P2->OUT = 0x02; // green
         }else if(-17000 < reflectance_value && reflectance_value < 17000){
             state = state->next[3];
-            P2->OUT = 0x03; // yellow
+            P2->OUT = 0x00; // dark
         }else if(17000 < reflectance_value && reflectance_value < 20000){
             state = state->next[4];
             P2->OUT = 0x06; // sky_blue
-        }else if(20000 < reflectance_value && reflectance_value < 25000){
+        }else if(20000 < reflectance_value && reflectance_value < 40000){
             state = state->next[5];
             P2->OUT = 0x05;//pink
-        }else if(reflectance_value > 250000){
-            if(state = harder_right){
-                Clock_Delay1ms(200);
+        }else if(reflectance_value > 40000){
+            if(state == harder_left){
+                Clock_Delay1ms(75);
             }
             state = state->next[6];
-            P2->OUT = 0x01;//red
+            P2->OUT = 0x03;// yellow
         }
 
         PWM_SetDutyPercentage(state->left, state->right);
-        if(sensor_value == 0x03 || sensor_value == 0x30){
-            Clock_Delay1ms(200);
+
+//        if(state == err_straight){
+//            Motor_Backward_2(300);
+//            Motor_Forward_2();
+//        }else
+        if(state == err_left || state == err_right){
+            Clock_Delay1ms(100);
         }
+
+
     }
 }

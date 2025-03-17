@@ -234,23 +234,6 @@ uint8_t Reflectance_End(void){
     P5->OUT &= ~0x08;     // turn off 4 even IR LEDs
     P9->OUT &= ~0x04;     // turn off 4 odd IR LEDs
 
-    // sensor colors
-    if (res == 0x03)
-        P2->OUT = 0x01; // red
-    else if (res == 0x06)
-        P2->OUT = 0x04; // blue
-    else if (res == 0x0C)
-           P2->OUT = 0x02; // green
-    else if (res == 0x18)
-           P2->OUT = 0x03; // yellow
-    else if (res == 0x30)
-           P2->OUT = 0x06; // sky blue
-    else if (res == 0x60)
-           P2->OUT = 0x07; // white
-    else if (res == 0xC0)
-           P2->OUT = 0x05; // pink
-    else
-           P2->OUT = 0; // dark
 
     return res;
 }
