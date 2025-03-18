@@ -2,13 +2,6 @@
 #include "msp.h"
 #include "../inc/BumpInt.h"
 #include "../inc/Clock.h"
-#include "../inc/CortexM.h"
-#include "../inc/FlashProgram.h"
-#include "../inc/LaunchPad.h"
-#include "../inc/Motor.h"
-#include "../inc/MotorSimple.h"
-#include "../inc/TExaS.h"
-#include "../inc/TimerA1.h"
 #include "../inc/SysTickInts.h"
 #include "../inc/Reflectance.h"
 
@@ -129,16 +122,16 @@ typedef const struct state state_t;
 //};
 
 state_t fsm[10]={
-    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// straight
-    {20,10,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_right }},// slight_left
-    {10,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// slight_right
-    {25,5 ,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_left }},// harder_left
-    {5 ,25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// harder_right
-    {25 ,0,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_left }},// all_left
-    {0, 25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }}, // all_right
-    {25,0 ,{ all_left, harder_left, slight_right, straight, slight_left, harder_right, all_right, err_left }}, // err_left
-    {0 ,25,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// err_right
-    {15,0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight}} // err_straight
+    {15,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight }},// straight
+    {15,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// slight_left
+    {10,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// slight_right
+    {15,5 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// harder_left
+    {5 ,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// harder_right
+    {20, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// all_left
+    {0 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }}, // all_right
+    {20,0 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }}, // err_left
+    {0 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// err_right
+    {20,5,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight}} // err_straight
 };
 
 // Using SysTick to read reflectance (rory)
@@ -208,46 +201,34 @@ int main(void) {
     state = straight;
     reflectance_value = 0;
     sensor_value = 0x01; // want sooome values but don't want the bad case
-
     while (1) {
         if(reflectance_value == 0 && (sensor_value == 0 || sensor_value == 0xFF)){
             state = state->next[7]; // bad!!
             P2->OUT = 0x07; // white
-        }else if(reflectance_value < -40000){
+        }else if(reflectance_value < -23799){
             P2->OUT = 0x01;//red
             state = state->next[0]; //way off on left
-        }else if(-40000 < reflectance_value && reflectance_value < -20000){
+        }else if(-23799 < reflectance_value && reflectance_value < -20000){
             state = state->next[1];
             P2->OUT = 0x04; //blue
-        }else if(-20000 < reflectance_value && reflectance_value < -17000){
+        }else if(-20000 < reflectance_value && reflectance_value < -10000){
             state = state->next[2];
             P2->OUT = 0x02; // green
-        }else if(-17000 < reflectance_value && reflectance_value < 17000){
+        }else if(-10000 < reflectance_value && reflectance_value < 10000){
             state = state->next[3];
             P2->OUT = 0x00; // dark
-        }else if(17000 < reflectance_value && reflectance_value < 20000){
+        }else if(10000 < reflectance_value && reflectance_value < 20000){
             state = state->next[4];
             P2->OUT = 0x06; // sky_blue
-        }else if(20000 < reflectance_value && reflectance_value < 40000){
+        }else if(20000 < reflectance_value && reflectance_value < 23799){
             state = state->next[5];
             P2->OUT = 0x05;//pink
-        }else if(reflectance_value > 40000){
-            if(state == harder_left){
-                Clock_Delay1ms(75);
-            }
+        }else if(reflectance_value > 23799){
             state = state->next[6];
             P2->OUT = 0x03;// yellow
         }
 
         PWM_SetDutyPercentage(state->left, state->right);
-
-//        if(state == err_straight){
-//            Motor_Backward_2(300);
-//            Motor_Forward_2();
-//        }else
-        if(state == err_left || state == err_right){
-            Clock_Delay1ms(100);
-        }
 
 
     }

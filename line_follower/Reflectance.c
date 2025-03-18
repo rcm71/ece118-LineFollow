@@ -182,8 +182,8 @@ uint8_t Reflectance_Center(uint32_t time){
 int32_t Reflectance_Position(uint8_t data){
 
     int32_t w[] = {-33400,-23800,-14300,-4800,4800,14300,23800,33400};
-    uint32_t upper = 0, lower = 0;
-    uint32_t i, pos;
+    int32_t upper = 0, lower = 0;
+    int32_t i, pos;
 
     for (i = 0; i < 8; i++)
     {

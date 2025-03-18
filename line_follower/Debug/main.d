@@ -21,13 +21,6 @@ main.obj: /Applications/ti/ccs1260/ccs/ccs_base/arm/include/CMSIS/cmsis_ccs.h
 main.obj: /Applications/ti/ccs1260/ccs/ccs_base/arm/include/system_msp432p401r.h
 main.obj: ../../inc/BumpInt.h
 main.obj: ../../inc/Clock.h
-main.obj: ../../inc/CortexM.h
-main.obj: ../../inc/FlashProgram.h
-main.obj: ../../inc/LaunchPad.h
-main.obj: ../../inc/Motor.h
-main.obj: ../../inc/MotorSimple.h
-main.obj: ../../inc/TExaS.h
-main.obj: ../../inc/TimerA1.h
 main.obj: ../../inc/SysTickInts.h
 main.obj: ../../inc/Reflectance.h
 
@@ -72,20 +65,6 @@ main.obj: ../../inc/Reflectance.h
 ../../inc/BumpInt.h:
 
 ../../inc/Clock.h:
-
-../../inc/CortexM.h:
-
-../../inc/FlashProgram.h:
-
-../../inc/LaunchPad.h:
-
-../../inc/Motor.h:
-
-../../inc/MotorSimple.h:
-
-../../inc/TExaS.h:
-
-../../inc/TimerA1.h:
 
 ../../inc/SysTickInts.h:
 
