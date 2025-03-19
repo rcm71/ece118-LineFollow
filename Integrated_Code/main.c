@@ -107,27 +107,27 @@ void BumpTask(uint8_t bump) { // bump is a 6 bit number
     if ((bump & 0x01) | (bump & 0x02) | (bump & 0x03)) { // bump 0, 1, or both pressed
 
         // move motor backwards for 1 second
-        Motor_Backward_2(1000);
+        Motor_Backward_2(500);
         PWM_SetDutyPercentage(20, 10);  // Turn right
-        Clock_Delay1ms(2000);
+        Clock_Delay1ms(1000);
 
     }
     else if ((bump & 0x04) | (bump & 0x08) | (bump & 0x0C)) { // bump 2, 3, or both pressed
         // move motor backwards for 2 seconds
-        Motor_Backward_2(2000);
+        Motor_Backward_2(500);
         PWM_SetDutyPercentage(20, 10);  // Turn right
-        Clock_Delay1ms(2000);
+        Clock_Delay1ms(1000);
     }
     else if ((bump & 0x10) | (bump & 0x20) | (bump & 0x30)) { // bump 4, 5, or both pressed
         // move motor backwards for 1 second and turn left
-        Motor_Backward_2(1000);
+        Motor_Backward_2(500);
         PWM_SetDutyPercentage(10, 20);  // Turn left
-        Clock_Delay1ms(2000);
+        Clock_Delay1ms(1000);
     }
     else { // anything else, wild card
-        Motor_Backward_2(1000);
+        Motor_Backward_2(500);
         PWM_SetDutyPercentage(10, 20);  // Turn left
-        Clock_Delay1ms(2000);
+        Clock_Delay1ms(1000);
     }
     Motor_Forward_2();
 }
