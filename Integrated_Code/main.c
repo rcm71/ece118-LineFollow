@@ -1,22 +1,9 @@
 #include <stdint.h>
 #include "msp.h"
-#include "../inc/bump.h"
 #include "../inc/BumpInt.h"
 #include "../inc/Clock.h"
-#include "../inc/CortexM.h"
-#include "../inc/FlashProgram.h"
-#include "../inc/LaunchPad.h"
-#include "../inc/Motor.h"
-#include "../inc/MotorSimple.h"
-#include "../inc/SysTick.h"
-#include "../inc/TExaS.h"
-#include "../inc/TimerA1.h"
 #include "../inc/SysTickInts.h"
 #include "../inc/Reflectance.h"
-
-
-
-
 
 
 // Function to initialize TimerA for Center-Aligned PWM
@@ -87,18 +74,94 @@ void Motor_Stop_2(void) {
 // Function to configure all unused GPIO pins as outputs and set them low
 void ConfigureUnusedPins(void) {
     // Configure all unused pins as outputs and set them low
+    P1->SEL0= 0x00; P1->SEL1= 0x00;
     P1->DIR = 0xFF; P1->OUT = 0x00;
+    P2->SEL0= 0x00; P2->SEL1= 0x00;
     P2->DIR = 0xFF; P2->OUT = 0x00;
+    P3->SEL0= 0x00; P3->SEL1= 0x00;
     P3->DIR = 0xFF; P3->OUT = 0x00;
+    P4->SEL0= 0x00; P4->SEL1= 0x00;
     P4->DIR = 0xFF; P4->OUT = 0x00;
+    P5->SEL0= 0x00; P5->SEL1= 0x00;
     P5->DIR = 0xFF; P5->OUT = 0x00;
+    P6->SEL0= 0x00; P6->SEL1= 0x00;
     P6->DIR = 0xFF; P6->OUT = 0x00;
+    P7->SEL0= 0x00; P7->SEL1= 0x00;
     P7->DIR = 0xFF; P7->OUT = 0x00;
+    P8->SEL0= 0x00; P8->SEL1= 0x00;
     P8->DIR = 0xFF; P8->OUT = 0x00;
+    P9->SEL0= 0x00; P9->SEL1= 0x00;
     P9->DIR = 0xFF; P9->OUT = 0x00;
-    P10->DIR = 0xFF; P10->OUT = 0x00;
+    P10->SEL0=0x00; P10->SEL1=0x00;
+    P10->DIR =0xFF; P10->OUT =0x00;
 }
 
+
+
+// fsm state for robot (rory)
+struct state{
+    uint8_t left; // pwm % for left motor
+    uint8_t right;// pwm % for right motor
+    const struct state*next[8]; // state transitions
+};
+typedef const struct state state_t;
+
+#define straight &fsm[0]
+#define slight_left &fsm[1]
+#define slight_right &fsm[2]
+#define harder_left &fsm[3]
+#define harder_right &fsm[4]
+#define all_left &fsm[5]
+#define all_right &fsm[6]
+#define err_left &fsm[7]
+#define err_right &fsm[8]
+#define err_straight &fsm[9]
+
+state_t fsm[10]={
+    {10,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight }},// straight
+    {15,7,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// slight_left
+    {7,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// slight_right
+    {15,5 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// harder_left
+    {5 ,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// harder_right
+    {20, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// all_left
+    {0 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }}, // all_right
+    {20,0 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }}, // err_left
+    {0 ,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// err_right
+    {40,40 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight}} // err_straight
+};
+//state_t fsm[10]={
+//    {45,45,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight }},// straight
+//    {30,15,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// slight_left
+//    {15,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// slight_right
+//    {30,10 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// harder_left
+//    {10 ,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// harder_right
+//    {30, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }},// all_left
+//    {0 ,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }}, // all_right
+//    {30,0 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_left }}, // err_left
+//    {0 ,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_right }},// err_right
+//    {20,5 ,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, err_straight}} // err_straight
+//};
+
+
+
+// Using SysTick to read reflectance (rory)
+uint8_t sensor_value;
+uint8_t interrupt_count;
+int32_t reflectance_value;
+uint8_t flag;
+
+void SysTick_Handler(void){
+    if(interrupt_count == 0){
+        Reflectance_Start();
+    }else if(interrupt_count == 1){
+        sensor_value = Reflectance_End();
+        reflectance_value = Reflectance_Position(sensor_value);
+        flag = 1;
+    }
+    interrupt_count = (interrupt_count + 1) % 10;
+}
+
+state_t* state;
 // (andreea) Function to define task called when bump sensor is triggered
 void BumpTask(uint8_t bump) { // bump is a 6 bit number
     // stop motors immediately
@@ -130,90 +193,59 @@ void BumpTask(uint8_t bump) { // bump is a 6 bit number
         Clock_Delay1ms(1000);
     }
     Motor_Forward_2();
+    state = straight;
 }
-
-
-// fsm state for robot (rory)
-struct state{
-    uint8_t left;
-    uint8_t right;
-    const struct state*next[7];
-};
-typedef const struct state state_t;
-
-#define straight &fsm[0]
-#define slight_left &fsm[1]
-#define slight_right &fsm[2]
-#define harder_left &fsm[3]
-#define harder_right &fsm[4]
-#define all_left &fsm[5]
-#define all_right &fsm[6]
-
-// fsm for our robot (rory)
-state_t fsm[TOTAL_STATES]={
-    {30,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// straight
-    {20,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_right }},// slight_left
-    {30,20,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, slight_left }},// slight_right
-    {10,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_right }},// harder_left
-    {30,10,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, harder_left }},// harder_right
-    {0 ,30,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_right }},// all_left
-    {30, 0,{ all_left, harder_left, slight_left, straight, slight_right, harder_right, all_right, all_left }} // all_right
-};
-
-// Using SysTick to read reflectance (rory)
-uint8_t sensor_value;
-uint8_t flag;
-uint8_t bump_value;
-uint8_t interrupt_count;
-volatile uint8_t semaphore;
-uint32_t reflectance_value;
-
-void SysTick_Handler(void){
-    if(interrupt_count == 0){
-        Reflectance_Start();
-    }else if(interrupt_count == 1){
-        flag = 1; // 'semaphore'
-        sensor_value = Reflectance_End();
-        reflectance_value = Reflectance_Position(sensor_value);
-    }
-    interrupt_count = (interrupt_count + 1) % 10;
-}
-
 
 int main(void) {
     //Clock_Init12MHz();  // Use 12 MHz instead of 48 MHz for power savings
-    Clock_Init48MHz(); 
+    Clock_Init48MHz();
     ConfigureUnusedPins();  // Configure all unused pins as outputs and set them low
     Motor_Control_Init();  // Initialize motor control GPIO
     Motor_Forward_2();     // Start moving forward
     BumpInt_Init(BumpTask); // (andreea) initialization for bump and edge interrupt
-    SysTick_Init(48000, 2);// may need to change priority
+    //SysTick_Init(12000, 7);// may need to change priority
+    SysTick_Init(36000, 7);
     Reflectance_Init();
 
+    // Define PWM period (~3.2 kHz for 48 MHz clock)
+    PWM_Init(15000);         // Initialize PWM
 
-    uint16_t period = 15000;  // Define PWM period (~3.2 kHz for 48 MHz clock)
-    PWM_Init(period);         // Initialize PWM
 
-
-    state_t* state = straight;
+    state = straight;
     reflectance_value = 0;
     sensor_value = 0x01; // want sooome values but don't want the bad case
+    __enable_irq();
     while (1) {
-        PWM_SetDutyPercentage(state->left, state->right);
-        if(reflectance_value == 0 && sensor_value == 0){
-            state = state->next[7]; // bad!!
-        }else if(reflectance_value < -30000){
-            state = state->next[0]; //way off on left
-        }else if(-30000 < reflectance_value && reflectance_value < -20000){
-            state = state->next[1];
-        }else if(-20000 < reflectance_value && reflectance_value < -10000){
-            state = state->next[2];
-        }else if(-10000 < reflectance_value && reflectance_value < 10000){
-            state = state->next[3];
-        }else if(20000 < reflectance_value && reflectance_value < 30000){
-            state = state->next[5];
-        }else if(reflectance_value > 300000){
-            state = state->next[6];
+        if(flag == 1){
+            if(reflectance_value == 0 && (sensor_value == 0 || sensor_value == 0xFF)){
+                state = state->next[7]; // bad!!
+                P2->OUT = 0x07; // white
+            }else if(reflectance_value < -23799){
+                P2->OUT = 0x01;//red
+                state = state->next[0]; //way off on left
+            }else if(-23799 < reflectance_value && reflectance_value < -20000){
+                state = state->next[1];
+                P2->OUT = 0x04; //blue
+            }else if(-20000 < reflectance_value && reflectance_value < -10000){
+                state = state->next[2];
+                P2->OUT = 0x02; // green
+            }else if(-10000 < reflectance_value && reflectance_value < 10000){
+                state = state->next[3];
+                P2->OUT = 0x00; // dark
+            }else if(10000 < reflectance_value && reflectance_value < 20000){
+                state = state->next[4];
+                P2->OUT = 0x06; // sky_blue
+            }else if(20000 < reflectance_value && reflectance_value < 23799){
+                state = state->next[5];
+                P2->OUT = 0x05;//pink
+            }else if(reflectance_value > 23799){
+                state = state->next[6];
+                P2->OUT = 0x03;// yellow
+            }
+            PWM_SetDutyPercentage(state->left, state->right);
+            flag = 0;
         }
+        SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+        __wfi();
     }
 }
