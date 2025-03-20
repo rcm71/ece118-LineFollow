@@ -182,16 +182,16 @@ uint8_t Reflectance_Center(uint32_t time){
 int32_t Reflectance_Position(uint8_t data){
 
     int32_t w[] = {-33400,-23800,-14300,-4800,4800,14300,23800,33400};
-    uint32_t upper = 0, lower = 0;
-    uint8_t i, pos;
+    int32_t upper = 0, lower = 0;
+    int32_t i, pos;
 
     for (i = 0; i < 8; i++)
     {
-        pos = (data >> i) & 1;
+        pos = (data >> i) & 0x01;
         upper += pos*w[i];
         lower += pos;
     }
-    if (lower == 0) return 0;
+    if (lower == 0 || lower == 8) return 0;
     return (upper/lower);
 }
 
@@ -229,28 +229,11 @@ void Reflectance_Start(void){
 // Assumes: Reflectance_Start() was called 1 ms ago
 uint8_t Reflectance_End(void){
 
+
+    uint8_t res =  P7->IN;
     P5->OUT &= ~0x08;     // turn off 4 even IR LEDs
     P9->OUT &= ~0x04;     // turn off 4 odd IR LEDs
 
-    uint8_t res =  P7->IN;
-
-    // sensor colors
-    if (res == 0x03)
-        P2->OUT = 0x01; // red
-    else if (res == 0x06)
-        P2->OUT = 0x04; // blue
-    else if (res == 0x0C)
-           P2->OUT = 0x02; // green
-    else if (res == 0x18)
-           P2->OUT = 0x03; // yellow
-    else if (res == 0x30)
-           P2->OUT = 0x06; // sky blue
-    else if (res == 0x60)
-           P2->OUT = 0x07; // white
-    else if (res == 0xC0)
-           P2->OUT = 0x05; // pink
-    else
-           P2->OUT = 0; // dark
 
     return res;
 }

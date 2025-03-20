@@ -36,11 +36,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/inc/SysTickInts.c</locationURI>
 		</link>
 		<link>
-			<name>TExaS.c</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/inc/TExaS.c</locationURI>
-		</link>
-		<link>
 			<name>TimerA1.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/inc/TimerA1.c</locationURI>

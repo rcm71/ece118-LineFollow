@@ -12,7 +12,6 @@ ORDERED_OBJS += \
 "./Clock.obj" \
 "./Reflectance.obj" \
 "./SysTickInts.obj" \
-"./TExaS.obj" \
 "./TimerA1.obj" \
 "./main.obj" \
 "./startup_msp432p401r_ccs.obj" \
@@ -140,15 +139,15 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 line_follower.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: Arm Linker'
-	"/Applications/ti/ccs1260/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me --advice:power=all --define=__MSP432P401R__ --define=ccs -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"line_follower.map" --heap_size=1024 --stack_size=512 -i"/Applications/ti/ccs1260/ccs/ccs_base/arm/include" -i"/Applications/ti/ccs1260/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/lib" -i"/Applications/ti/ccs1260/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="line_follower_linkInfo.xml" --rom_model -o "line_follower.out" $(ORDERED_OBJS)
+	"/Applications/ti/ccs1260/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me -Ooff --opt_for_speed=2 --advice:power=all --define=__MSP432P401R__ --define=ccs -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"line_follower.map" --heap_size=1024 --stack_size=512 -i"/Applications/ti/ccs1260/ccs/ccs_base/arm/include" -i"/Applications/ti/ccs1260/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/lib" -i"/Applications/ti/ccs1260/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="line_follower_linkInfo.xml" --rom_model -o "line_follower.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "BumpInt.obj" "Clock.obj" "Reflectance.obj" "SysTickInts.obj" "TExaS.obj" "TimerA1.obj" "main.obj" "startup_msp432p401r_ccs.obj" "system_msp432p401r.obj" 
-	-$(RM) "BumpInt.d" "Clock.d" "Reflectance.d" "SysTickInts.d" "TExaS.d" "TimerA1.d" "main.d" "startup_msp432p401r_ccs.d" "system_msp432p401r.d" 
+	-$(RM) "BumpInt.obj" "Clock.obj" "Reflectance.obj" "SysTickInts.obj" "TimerA1.obj" "main.obj" "startup_msp432p401r_ccs.obj" "system_msp432p401r.obj" 
+	-$(RM) "BumpInt.d" "Clock.d" "Reflectance.d" "SysTickInts.d" "TimerA1.d" "main.d" "startup_msp432p401r_ccs.d" "system_msp432p401r.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

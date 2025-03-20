@@ -11,7 +11,6 @@ C_SRCS += \
 /Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/Clock.c \
 ../Reflectance.c \
 /Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/SysTickInts.c \
-/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TExaS.c \
 /Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TimerA1.c \
 ../main.c \
 ../startup_msp432p401r_ccs.c \
@@ -22,7 +21,6 @@ C_DEPS += \
 ./Clock.d \
 ./Reflectance.d \
 ./SysTickInts.d \
-./TExaS.d \
 ./TimerA1.d \
 ./main.d \
 ./startup_msp432p401r_ccs.d \
@@ -33,7 +31,6 @@ OBJS += \
 ./Clock.obj \
 ./Reflectance.obj \
 ./SysTickInts.obj \
-./TExaS.obj \
 ./TimerA1.obj \
 ./main.obj \
 ./startup_msp432p401r_ccs.obj \
@@ -44,7 +41,6 @@ OBJS__QUOTED += \
 "Clock.obj" \
 "Reflectance.obj" \
 "SysTickInts.obj" \
-"TExaS.obj" \
 "TimerA1.obj" \
 "main.obj" \
 "startup_msp432p401r_ccs.obj" \
@@ -55,7 +51,6 @@ C_DEPS__QUOTED += \
 "Clock.d" \
 "Reflectance.d" \
 "SysTickInts.d" \
-"TExaS.d" \
 "TimerA1.d" \
 "main.d" \
 "startup_msp432p401r_ccs.d" \
@@ -66,7 +61,6 @@ C_SRCS__QUOTED += \
 "/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/Clock.c" \
 "../Reflectance.c" \
 "/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/SysTickInts.c" \
-"/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TExaS.c" \
 "/Users/rorymccann/Downloads/tirslk_max_1_00_00/inc/TimerA1.c" \
 "../main.c" \
 "../startup_msp432p401r_ccs.c" \
