@@ -56,10 +56,6 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "msp432.h"
 #include "../inc/Clock.h"
 
-#define OSCIL_OUTPUT 0x01 // 4.0
-#define CONTROL_ODD 0x04  // 9.2
-#define CONTROL_EVEN 0x08 // 5.3
-#define SENSORS 0xFF
 
 // ------------Reflectance_Init------------
 // Initialize the GPIO pins associated with the QTR-8RC
@@ -68,32 +64,36 @@ policies, either expressed or implied, of the FreeBSD Project.
 // Input: none
 // Output: none
 void Reflectance_Init(void){
+    // write this as part of Lab 6
 
-    /* control pins */
-    P9->DIR |= CONTROL_ODD;
-    P9->SEL0 &= ~CONTROL_ODD;
-    P9->SEL1 &= ~CONTROL_ODD;
-    P9->OUT &= ~CONTROL_ODD; // init to off
+    // EVEN LED init
+    P5->SEL0 &= ~0x08;
+    P5->SEL1 &= ~0x08;
+    P5->DIR |= 0x08;
+    P5->OUT &= ~0x08;  // EVEN LED initially off
 
-    P5->DIR |= CONTROL_EVEN;
-    P5->SEL0 &= ~CONTROL_EVEN;
-    P5->SEL1 &= ~CONTROL_EVEN;
-    P5->OUT &= ~CONTROL_EVEN;
+    // ODD LED init
+    P9->SEL0 &= ~0x04;
+    P9->SEL1 &= ~0x04;
+    P9->DIR |= 0x04;
+    P9->OUT &= ~0x04; // ODD LED initially off
 
-    /* sensor pins */
-    P7->DIR &= ~SENSORS;
-    /* do we want a pullup/down */
-    P7->REN &= ~SENSORS;
-    P7->SEL0 &= ~SENSORS;
-    P7->SEL1 &= ~SENSORS;
+    // INPUTS init (no pu or pd resistor)
+    P7->SEL0 &= 0x00;
+    P7->SEL1 &= 0x00;
+    P7->DIR &= 0x00;
+    P7->REN &= 0x00;
+
 }
 
+
 // ------------Reflectance_Read------------
-// Read the eight sensors
+// Read the eight sensors:
 // Turn on the 8 IR LEDs
 // Pulse the 8 sensors high for 10 us
 // Make the sensor pins input
 // wait t us
+    // the above is to "charge" the sensors
 // Read sensors
 // Turn off the 8 IR LEDs
 // Input: time to wait in usec
@@ -102,32 +102,29 @@ void Reflectance_Init(void){
 uint8_t Reflectance_Read(uint32_t time){
     uint8_t result;
 
-    /* turn on LED */
-    P9->OUT |= CONTROL_ODD;
-    P5->OUT |= CONTROL_EVEN;
-    P7->DIR |= SENSORS;
+    P5->OUT |= 0x08; // turn on 4 even IR LEDs
+    P9->OUT |= 0x04; // turn on 4 odd IR LEDs
 
-    /* wait 10us for capacitor to charge */
-    Clock_Delay1us(10);
+    // pulse the 8 sensors high with P7
+    // change to output
+    P7->DIR = 0xFF;
+    P7->OUT = 0xFF;
+    Clock_Delay1us(10);   // wait 10 us
 
-    /* Change dir to read values */
-    P7->DIR &= ~SENSORS;
-
-    /* wait (time)us */
+    // change to input
+    P7->DIR = 0x00;
     Clock_Delay1us(time);
+    result = P7->IN;        // read sensors and store in result
 
-    /* read sensor values */
-    result = P7->IN;
+    P5->OUT &= ~0x08;     // turn off 4 even IR LEDs
+    P9->OUT &= ~0x04;     // turn off 4 odd IR LEDs
 
-    /* turn off LED */
-    P9->OUT &= ~CONTROL_ODD;
-    P5->OUT &= ~CONTROL_EVEN;
-
+    Clock_Delay1ms(10);
     return result;
 }
 
 // ------------Reflectance_Center------------
-// Read the two center sensors
+// Read the two center sensors:
 // Turn on the 8 IR LEDs
 // Pulse the 8 sensors high for 10 us
 // Make the sensor pins input
@@ -143,8 +140,39 @@ uint8_t Reflectance_Read(uint32_t time){
 // 0,0          neither        lost
 // Assumes: Reflectance_Init() has been called
 uint8_t Reflectance_Center(uint32_t time){
-    // write this as part of Lab 6
-  return 0; // replace this line
+    uint8_t result;
+    P5->OUT |= 0x08; // turn on 4 even IR LEDs
+    P9->OUT |= 0x04; // turn on 4 odd IR LEDs
+
+    // change to output
+    P7->DIR &= ~0x00;
+    P7->OUT &= ~0x00;
+    Clock_Delay1us(10);   // wait 10 us
+
+    // change to input
+    P7->DIR &= 0x00;
+    P7->OUT &= 0x00;
+    Clock_Delay1us(time);
+    result = P7->IN;
+
+    // mask result to make all bits 0 except for middle two (necessary?)
+    //result |= 0x
+    if (result == 0x18)
+    {
+        return 3;
+    }
+    else if (result == 0x08)
+    {
+        return 1;
+    }
+    else if (result == 0x10)
+    {
+        return 2;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 
@@ -152,17 +180,19 @@ uint8_t Reflectance_Center(uint32_t time){
 // Input: data is 8-bit result from line sensor
 // Output: position in 0.1mm relative to center of line
 int32_t Reflectance_Position(uint8_t data){
-    int i = 0;
-    int32_t w[8] = {-33400,-23800,-14300,-4800,4800,14300,23800,33400};
-    int32_t total_dist = 0;
-    int32_t total_bits = 0;
-    for(;i < 8; i++){
-        uint8_t itty_bitty = (data>>i)%2;
-        total_bits += itty_bitty;
-        total_dist += w[i] * itty_bitty;
+
+    int32_t w[] = {-33400,-23800,-14300,-4800,4800,14300,23800,33400};
+    int32_t upper = 0, lower = 0;
+    int32_t i, pos;
+
+    for (i = 0; i < 8; i++)
+    {
+        pos = (data >> i) & 0x01;
+        upper += pos*w[i];
+        lower += pos;
     }
-    int32_t total = total_dist/ total_bits;
-    return total;
+    if (lower == 0 || lower == 8) return 0;
+    return (upper/lower);
 }
 
 
@@ -175,15 +205,17 @@ int32_t Reflectance_Position(uint8_t data){
 // Output: none
 // Assumes: Reflectance_Init() has been called
 void Reflectance_Start(void){
-    /* turn on LED */
-       P9->OUT |= CONTROL_ODD;
-       P5->OUT |= CONTROL_EVEN;
-       P7->DIR |= SENSORS;
+    P5->OUT |= 0x08; // turn on 4 even IR LEDs
+    P9->OUT |= 0x04; // turn on 4 odd IR LEDs
 
-       Clock_Delay1us(10);
+    // pulse the 8 sensors high with P7
+    // change to output
+    P7->DIR = 0xFF;
+    P7->OUT = 0xFF;
+    Clock_Delay1us(10);   // wait 10 us
 
-       // ready to read!
-       P7->DIR &= ~SENSORS;
+    // change to input
+    P7->DIR = 0x00;
 }
 
 
@@ -196,12 +228,20 @@ void Reflectance_Start(void){
 // Assumes: Reflectance_Init() has been called
 // Assumes: Reflectance_Start() was called 1 ms ago
 uint8_t Reflectance_End(void){
-    /* read sensor values */
-       uint8_t result = P7->IN;
 
-       /* turn off LED */
-       P9->OUT &= ~CONTROL_ODD;
-       P5->OUT &= ~CONTROL_EVEN;
-       return result;
+
+    uint8_t res =  P7->IN;
+    P5->OUT &= ~0x08;     // turn off 4 even IR LEDs
+    P9->OUT &= ~0x04;     // turn off 4 odd IR LEDs
+
+
+    return res;
 }
-
+// dark --- 0
+// red R-- 0x01
+// blue --B 0x04
+// green -G- 0x02
+// yellow RG- 0x03
+// sky blue -GB 0x06
+// white RGB 0x07
+// pink R-B 0x05
